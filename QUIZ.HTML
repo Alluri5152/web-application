@@ -1,26 +1,60 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Quiz App</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Quiz App with 20 MCQs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .quiz-container {
+      width: 500px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 15px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+    }
+    li {
+      margin: 8px 0;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background: #4caf50;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    #timer {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #e63946;
+    }
+  </style>
 </head>
 <body>
-<div class="quiz-container" id="quiz">
-
-  <!-- Login screen -->
-  <div id="loginScreen">
-    <centre><h2>Enter Your Details</h2></centre>
-    <form id="loginForm">
-      <input type="text" id="studentName" placeholder="Enter Name" required><br>
-      <input type="text" id="sucCode" placeholder="Enter SUC Code" required><br>
-      <input type="password" id="password" placeholder="Password (Last 4 digits of SUC Code)" required><br>
-      <button type="submit">Start Quiz</button>
-    </form>
-  </div>
-
-  <!-- Quiz screen -->
-  <div id="quizScreen" style="display:none;">
+  <div class="quiz-container" id="quiz">
     <div id="timer">Time left: 30s</div>
     <h2 id="question">Question text</h2>
     <ul>
@@ -32,118 +66,109 @@
     <button id="submit">Submit</button>
   </div>
 
-</div>
+  <script>
+    const quizData = [
+      // --- Computer Programming (10) ---
+      {question: "Which language is used to style web pages?", a: "HTML", b: "CSS", c: "Python", d: "C++", correct: "b"},
+      {question: "Which keyword is used to define a function in Python?", a: "function", b: "fun", c: "def", d: "define", correct: "c"},
+      {question: "Which of the following is not a programming language?", a: "Java", b: "C", c: "HTML", d: "Python", correct: "c"},
+      {question: "What does SQL stand for?", a: "Structured Question Language", b: "Simple Query Language", c: "Structured Query Language", d: "Statement Query Language", correct: "c"},
+      {question: "Which company originally developed Java?", a: "Microsoft", b: "Oracle", c: "Sun Microsystems", d: "IBM", correct: "c"},
+      {question: "Which symbol is used for comments in Python?", a: "//", b: "#", c: "/* */", d: "<!-- -->", correct: "b"},
+      {question: "Which HTML tag is used to create a hyperlink?", a: "<a>", b: "<link>", c: "<href>", d: "<url>", correct: "a"},
+      {question: "Which data structure uses FIFO?", a: "Stack", b: "Queue", c: "Tree", d: "Graph", correct: "b"},
+      {question: "Which keyword is used to inherit a class in Java?", a: "this", b: "super", c: "extends", d: "implements", correct: "c"},
+      {question: "Which operator is used for exponentiation in Python?", a: "^", b: "", c: "^^", d: "//", correct: "b"},
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+      // --- General Knowledge (10) ---
+      {question: "Which planet is known as the Blue Planet?", a: "Mars", b: "Earth", c: "Neptune", d: "Jupiter", correct: "b"},
+      {question: "Who was the first President of India?", a: "Mahatma Gandhi", b: "Jawaharlal Nehru", c: "Rajendra Prasad", d: "S. Radhakrishnan", correct: "c"},
+      {question: "Which is the largest ocean on Earth?", a: "Atlantic Ocean", b: "Indian Ocean", c: "Arctic Ocean", d: "Pacific Ocean", correct: "d"},
+      {question: "Which is the national animal of India?", a: "Lion", b: "Tiger", c: "Elephant", d: "Peacock", correct: "b"},
+      {question: "Which country is called the Land of Rising Sun?", a: "China", b: "Japan", c: "Thailand", d: "South Korea", correct: "b"},
+      {question: "Which is the longest river in the world?", a: "Amazon", b: "Nile", c: "Ganga", d: "Yangtze", correct: "b"},
+      {question: "Who invented the light bulb?", a: "Alexander Graham Bell", b: "Thomas Edison", c: "Nikola Tesla", d: "James Watt", correct: "b"},
+      {question: "Which gas is essential for breathing?", a: "Carbon Dioxide", b: "Oxygen", c: "Nitrogen", d: "Helium", correct: "b"},
+      {question: "Which is the smallest continent?", a: "Europe", b: "Australia", c: "Antarctica", d: "South America", correct: "b"},
+      {question: "Who is known as the Missile Man of India?", a: "C.V. Raman", b: "Homi Bhabha", c: "A.P.J. Abdul Kalam", d: "Vikram Sarabhai", correct: "c"},
+    ];
 
-<script>
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "YOUR_APP_ID"
-};
+    const quiz = document.getElementById('quiz');
+    const answerEls = document.querySelectorAll('.answer');
+    const questionEl = document.getElementById('question');
+    const a_text = document.getElementById('a_text');
+    const b_text = document.getElementById('b_text');
+    const c_text = document.getElementById('c_text');
+    const d_text = document.getElementById('d_text');
+    const submitBtn = document.getElementById('submit');
+    const timerEl = document.getElementById('timer');
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+    let currentQuiz = 0;
+    let score = 0;
+    let timeLeft = 30;
+    let timer;
 
-const quizData = [
-  {question: "Which language is used to style web pages?", a: "HTML", b: "CSS", c: "Python", d: "C++", correct: "b"},
-  {question: "Which keyword is used to define a function in Python?", a: "function", b: "fun", c: "def", d: "define", correct: "c"},
-  {question: "Which of the following is not a programming language?", a: "Java", b: "C", c: "HTML", d: "Python", correct: "c"},
-  {question: "What does SQL stand for?", a: "Structured Question Language", b: "Simple Query Language", c: "Structured Query Language", d: "Statement Query Language", correct: "c"},
-  {question: "Which company originally developed Java?", a: "Microsoft", b: "Oracle", c: "Sun Microsystems", d: "IBM", correct: "c"},
-  {question: "Which symbol is used for comments in Python?", a: "//", b: "#", c: "/* */", d: "<!-- -->", correct: "b"},
-  {question: "Which HTML tag is used to create a hyperlink?", a: "<a>", b: "<link>", c: "<href>", d: "<url>", correct: "a"},
-  {question: "Which data structure uses FIFO?", a: "Stack", b: "Queue", c: "Tree", d: "Graph", correct: "b"},
-  {question: "Which keyword is used to inherit a class in Java?", a: "this", b: "super", c: "extends", d: "implements", correct: "c"},
-  {question: "Which operator is used for exponentiation in Python?", a: "^", b: "", c: "^^", d: "//", correct: "b"}
-];
+    loadQuiz();
 
-const quiz = document.getElementById('quiz');
-const answerEls = document.querySelectorAll('.answer');
-const questionEl = document.getElementById('question');
-const a_text = document.getElementById('a_text');
-const b_text = document.getElementById('b_text');
-const c_text = document.getElementById('c_text');
-const d_text = document.getElementById('d_text');
-const submitBtn = document.getElementById('submit');
-const timerEl = document.getElementById('timer');
+    function loadQuiz() {
+      deselectAnswers();
+      const currentQuizData = quizData[currentQuiz];
+      questionEl.innerText = currentQuizData.question;
+      a_text.innerText = currentQuizData.a;
+      b_text.innerText = currentQuizData.b;
+      c_text.innerText = currentQuizData.c;
+      d_text.innerText = currentQuizData.d;
 
-let currentQuiz = 0;
-let score = 0;
-let timeLeft = 30;
-let timer;
-let studentName = "";
-let sucCode = "";
+      // reset timer
+      clearInterval(timer);
+      timeLeft = 30;
+      timerEl.innerText = Time 
+      timer = setInterval(updateTimer, 1000);
+    }
 
-// Login & one attempt + password
-document.getElementById("loginForm").addEventListener("submit", function(e) {
-  e.preventDefault();
-  studentName = document.getElementById("studentName").value.trim();
-  sucCode = document.getElementById("sucCode").value.trim();
-  const password = document.getElementById("password").value.trim();
-  if (!studentName || !sucCode || !password) return;
+    function updateTimer() {
+      timeLeft--;
+      timerEl.innerText = Time 
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        nextQuestion(); // auto move
+      }
+    }
 
-  if (password !== sucCode.slice(-4)) {
-    alert("❌ Incorrect password! It should be the last 4 digits of your SUC Code.");
-    return;
-  }
+    function deselectAnswers() {
+      answerEls.forEach(answerEl => answerEl.checked = false);
+    }
 
-  const scoresRef = db.ref("scores");
-  const activeRef = db.ref("activeAttempts");
+    function getSelected() {
+      let answer;
+      answerEls.forEach(answerEl => {
+        if (answerEl.checked) {
+          answer = answerEl.id;
+        }
+      });
+      return answer;
+    }
 
-  scoresRef.orderByChild("sucCode").equalTo(sucCode).once("value", snapshot => {
-    if (snapshot.exists()) { alert("❌ Already completed!"); return; }
-    activeRef.child(sucCode).once("value", snap => {
-      if (snap.exists()) { alert("⚠ Already taking quiz!"); return; }
+    function nextQuestion() {
+      const answer = getSelected();
+      if (answer && answer === quizData[currentQuiz].correct) {
+        score++;
+      }
+      currentQuiz++;
+      if (currentQuiz < quizData.length) {
+        loadQuiz();
+      } else {
+        quiz.innerHTML = `
+          <h2>You answered ${score}/${quizData.length} questions correctly 🎉</h2>
+          <button onclick="location.reload()">Restart Quiz</button>
+        `;
+      }
+    }
 
-      document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("quizScreen").style.display = "block";
-
-      activeRef.child(sucCode).set({name: studentName, startTime: Date.now()});
-      loadQuiz();
+    submitBtn.addEventListener('click', () => {
+      clearInterval(timer);
+      nextQuestion();
     });
-  });
-});
-
-function loadQuiz() {
-  deselectAnswers();
-  const currentQuizData = quizData[currentQuiz];
-  questionEl.innerText = currentQuizData.question;
-  a_text.innerText = currentQuizData.a;
-  b_text.innerText = currentQuizData.b;
-  c_text.innerText = currentQuizData.c;
-  d_text.innerText = currentQuizData.d;
-  clearInterval(timer);
-  timeLeft = 30;
-  
-  timer = setInterval(updateTimer, 1000);
-}
-
-function updateTimer() {
-  timeLeft--;
-  
-  if (timeLeft <= 0) { clearInterval(timer); nextQuestion(); }
-}
-
-function deselectAnswers() { answerEls.forEach(a => a.checked = false); }
-function getSelected() { let answer; answerEls.forEach(a => { if(a.checked) answer = a.id }); return answer; }
-function nextQuestion() { const answer = getSelected(); if(answer && answer===quizData[currentQuiz].correct) score++; currentQuiz++; currentQuiz<quizData.length ? loadQuiz() : finishQuiz(); }
-
-function finishQuiz() {
-  db.ref("activeAttempts").child(sucCode).remove();
-  db.ref("scores").push({name: studentName, sucCode, score, total: quizData.length, timestamp: Date.now()});
-  quiz.innerHTML = `<h2>✅ ${studentName} (SUC Code: ${sucCode})</h2>
-                    <h3>You scored ${score}/${quizData.length} 🎉</h3>`;
-}
-
-submitBtn.addEventListener('click', () => { clearInterval(timer); nextQuestion(); });
-</script>
+  </script>
 </body>
 </html>
