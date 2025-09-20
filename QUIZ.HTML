@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="quiz-container" id="quiz">
+
+  <!-- Login screen -->
+  <div id="loginScreen">
+    <centre><h2>Enter Your Details</h2></centre>
+    <form id="loginForm">
+      <input type="text" id="studentName" placeholder="Enter Name" required><br>
+      <input type="text" id="sucCode" placeholder="Enter SUC Code" required><br>
+      <input type="password" id="password" placeholder="Password (Last 4 digits of SUC Code)" required><br>
+      <button type="submit">Start Quiz</button>
+    </form>
+  </div>
+
+  <!-- Quiz screen -->
+  <div id="quizScreen" style="display:none;">
+    <div id="timer">Time left: 30s</div>
+    <h2 id="question">Question text</h2>
+    <ul>
+      <li><input type="radio" name="answer" id="a" class="answer"><label for="a" id="a_text">Answer A</label></li>
+      <li><input type="radio" name="answer" id="b" class="answer"><label for="b" id="b_text">Answer B</label></li>
+      <li><input type="radio" name="answer" id="c" class="answer"><label for="c" id="c_text">Answer C</label></li>
+      <li><input type="radio" name="answer" id="d" class="answer"><label for="d" id="d_text">Answer D</label></li>
+    </ul>
+    <button id="submit">Submit</button>
+  </div>
+
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const quizData = [
+  {question: "Which language is used to style web pages?", a: "HTML", b: "CSS", c: "Python", d: "C++", correct: "b"},
+  {question: "Which keyword is used to define a function in Python?", a: "function", b: "fun", c: "def", d: "define", correct: "c"},
+  {question: "Which of the following is not a programming language?", a: "Java", b: "C", c: "HTML", d: "Python", correct: "c"},
+  {question: "What does SQL stand for?", a: "Structured Question Language", b: "Simple Query Language", c: "Structured Query Language", d: "Statement Query Language", correct: "c"},
+  {question: "Which company originally developed Java?", a: "Microsoft", b: "Oracle", c: "Sun Microsystems", d: "IBM", correct: "c"},
+  {question: "Which symbol is used for comments in Python?", a: "//", b: "#", c: "/* */", d: "<!-- -->", correct: "b"},
+  {question: "Which HTML tag is used to create a hyperlink?", a: "<a>", b: "<link>", c: "<href>", d: "<url>", correct: "a"},
+  {question: "Which data structure uses FIFO?", a: "Stack", b: "Queue", c: "Tree", d: "Graph", correct: "b"},
+  {question: "Which keyword is used to inherit a class in Java?", a: "this", b: "super", c: "extends", d: "implements", correct: "c"},
+  {question: "Which operator is used for exponentiation in Python?", a: "^", b: "", c: "^^", d: "//", correct: "b"}
+];
+
+const quiz = document.getElementById('quiz');
+const answerEls = document.querySelectorAll('.answer');
+const questionEl = document.getElementById('question');
+const a_text = document.getElementById('a_text');
+const b_text = document.getElementById('b_text');
+const c_text = document.getElementById('c_text');
+const d_text = document.getElementById('d_text');
+const submitBtn = document.getElementById('submit');
+const timerEl = document.getElementById('timer');
+
+let currentQuiz = 0;
+let score = 0;
+let timeLeft = 30;
+let timer;
+let studentName = "";
+let sucCode = "";
+
+// Login & one attempt + password
+document.getElementById("loginForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  studentName = document.getElementById("studentName").value.trim();
+  sucCode = document.getElementById("sucCode").value.trim();
+  const password = document.getElementById("password").value.trim();
+  if (!studentName || !sucCode || !password) return;
+
+  if (password !== sucCode.slice(-4)) {
+    alert("❌ Incorrect password! It should be the last 4 digits of your SUC Code.");
+    return;
+  }
+
+  const scoresRef = db.ref("scores");
+  const activeRef = db.ref("activeAttempts");
+
+  scoresRef.orderByChild("sucCode").equalTo(sucCode).once("value", snapshot => {
+    if (snapshot.exists()) { alert("❌ Already completed!"); return; }
+    activeRef.child(sucCode).once("value", snap => {
+      if (snap.exists()) { alert("⚠ Already taking quiz!"); return; }
+
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("quizScreen").style.display = "block";
+
+      activeRef.child(sucCode).set({name: studentName, startTime: Date.now()});
+      loadQuiz();
+    });
+  });
+});
+
+function loadQuiz() {
+  deselectAnswers();
+  const currentQuizData = quizData[currentQuiz];
+  questionEl.innerText = currentQuizData.question;
+  a_text.innerText = currentQuizData.a;
+  b_text.innerText = currentQuizData.b;
+  c_text.innerText = currentQuizData.c;
+  d_text.innerText = currentQuizData.d;
+  clearInterval(timer);
+  timeLeft = 30;
+  
+  timer = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+  timeLeft--;
+  
+  if (timeLeft <= 0) { clearInterval(timer); nextQuestion(); }
+}
+
+function deselectAnswers() { answerEls.forEach(a => a.checked = false); }
+function getSelected() { let answer; answerEls.forEach(a => { if(a.checked) answer = a.id }); return answer; }
+function nextQuestion() { const answer = getSelected(); if(answer && answer===quizData[currentQuiz].correct) score++; currentQuiz++; currentQuiz<quizData.length ? loadQuiz() : finishQuiz(); }
+
+function finishQuiz() {
+  db.ref("activeAttempts").child(sucCode).remove();
+  db.ref("scores").push({name: studentName, sucCode, score, total: quizData.length, timestamp: Date.now()});
+  quiz.innerHTML = `<h2>✅ ${studentName} (SUC Code: ${sucCode})</h2>
+                    <h3>You scored ${score}/${quizData.length} 🎉</h3>`;
+}
+
+submitBtn.addEventListener('click', () => { clearInterval(timer); nextQuestion(); });
+</script>
+</body>
+</html>
